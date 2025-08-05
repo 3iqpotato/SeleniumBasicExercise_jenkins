@@ -29,13 +29,20 @@ pipeline {
             }
         }
 
-        stage('Run Tests') {
-            steps {
-                checkout scm
+stage('Run Tests') {
+    steps {
+        checkout scm
+        script {
+            if (isUnix()) {
+                sh 'dotnet test --configuration Release --logger "trx;LogFileName=testresults.trx"'
+            } else {
                 bat 'dotnet test --configuration Release --logger "trx;LogFileName=testresults.trx"'
-                publishTestResults allowEmptyResults: true, testResults: '**/*.trx'
             }
         }
+        // Convert TRX to JUnit format or use MSTest plugin
+        junit '**/testresults.trx' 
+    }
+}
     }
 
     post {
