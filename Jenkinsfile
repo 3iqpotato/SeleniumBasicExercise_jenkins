@@ -1,11 +1,12 @@
 pipeline {
-    agent any  // Can now run on Linux or Windows
+    agent any
 
     stages {
         stage('Setup ChromeDriver') {
             steps {
                 script {
                     if (isUnix()) {
+                        // Linux setup
                         sh '''
                             sudo apt-get update -y
                             sudo apt-get install -y wget unzip google-chrome-stable
@@ -15,11 +16,13 @@ pipeline {
                             chmod +x /usr/local/bin/chromedriver
                         '''
                     } else {
+                        // Windows setup (fixed version)
                         bat '''
                             choco install googlechrome -y
                             curl -L -o chromedriver.zip https://chromedriver.storage.googleapis.com/LATEST_RELEASE/chromedriver_win32.zip
-                            tar -xf chromedriver.zip -C "%ProgramFiles%"
-                            set PATH=%PATH%;%ProgramFiles%\\chromedriver.exe
+                            mkdir "%ProgramFiles%\\ChromeDriver" || echo Folder exists
+                            powershell -command "Expand-Archive -Path chromedriver.zip -DestinationPath '%ProgramFiles%\\ChromeDriver' -Force"
+                            set PATH=%PATH%;%ProgramFiles%\\ChromeDriver
                         '''
                     }
                 }
@@ -29,8 +32,15 @@ pipeline {
         stage('Run Tests') {
             steps {
                 checkout scm
-                bat 'dotnet test --configuration Release'
+                bat 'dotnet test --configuration Release --logger "trx;LogFileName=testresults.trx"'
+                publishTestResults allowEmptyResults: true, testResults: '**/*.trx'
             }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()
         }
     }
 }
