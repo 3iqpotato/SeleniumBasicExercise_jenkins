@@ -6,6 +6,7 @@ pipeline {
             steps {
                 script {
                     if (isUnix()) {
+                        // Linux setup
                         sh '''
                             sudo apt-get update -y
                             sudo apt-get install -y wget unzip google-chrome-stable
@@ -15,24 +16,31 @@ pipeline {
                             chmod +x /usr/local/bin/chromedriver
                         '''
                     } else {
+                        // Windows setup (fixed version)
                         bat '''
                             choco install googlechrome -y
-                            $chromeDriverVersion = (Invoke-WebRequest -Uri "https://chromedriver.storage.googleapis.com/LATEST_RELEASE").Content
-                            Invoke-WebRequest -Uri "https://chromedriver.storage.googleapis.com/$chromeDriverVersion/chromedriver_win32.zip" -OutFile "chromedriver.zip"
-                            Expand-Archive -Path "chromedriver.zip" -DestinationPath "$env:ProgramFiles\\ChromeDriver" -Force
-                            $env:PATH += ";$env:ProgramFiles\\ChromeDriver"
+                            curl -L -o chromedriver.zip https://chromedriver.storage.googleapis.com/LATEST_RELEASE/chromedriver_win32.zip
+                            mkdir "%ProgramFiles%\\ChromeDriver" || echo Folder exists
+                            powershell -command "Expand-Archive -Path chromedriver.zip -DestinationPath '%ProgramFiles%\\ChromeDriver' -Force"
+                            set PATH=%PATH%;%ProgramFiles%\\ChromeDriver
                         '''
                     }
                 }
             }
         }
 
-        stage('Run Tests') {
-            steps {
-                checkout scm
+stage('Run Tests') {
+    steps {
+        checkout scm
+        script {
+            if (isUnix()) {
+                sh 'dotnet test --configuration Release'
+            } else {
                 bat 'dotnet test --configuration Release'
             }
-        }
+        } 
+    }
+}
     }
 
     post {
