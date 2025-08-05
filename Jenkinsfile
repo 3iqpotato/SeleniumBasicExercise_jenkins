@@ -36,7 +36,7 @@ stage('Run Tests') {
             if (isUnix()) {
                 sh 'dotnet test --configuration Release'
             } else {
-                bat 'dotnet test --configuration Release'
+                bat 'dotnet test1 --configuration Release'
             }
         } 
     }
