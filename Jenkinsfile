@@ -34,9 +34,9 @@ stage('Run Tests') {
         checkout scm
         script {
             if (isUnix()) {
-                sh 'dotnet test --configuration Release'
+                sh 'dotnet test1 --configuration Release'
             } else {
-                bat 'dotnet test1 --configuration Release'
+                bat 'dotnet test --configuration Release'
             }
         } 
     }
